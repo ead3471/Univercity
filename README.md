@@ -29,6 +29,9 @@
  - SQL скрипт, который создаёт все таблицы с полями, их типами данных, ключами и связями.
  - Краткое описание каждой сущности и её свойств.
 
+
+<iframe width="100%" height="500px" allowtransparency="true" allowfullscreen="true" scrolling="no" title="Embedded DB Designer IFrame" frameborder="0" src='https://erd.dbdesigner.net/designer/1686223787-medica?embed=true'></iframe>
+
 ## Часть 2: SQL запросы
 Пожалуйста, реализуйте следующие SQL запросы:
 Выбрать всех студентов, обучающихся на курсе "Математика".
