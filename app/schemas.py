@@ -27,6 +27,10 @@ class CreateStudentSchema(VisitorBaseSchema):
     group_id: int = Field(description="Group id")
 
 
+class UpdateStudentSchema(CreateStudentSchema):
+    pass
+
+
 class Student(VisitorBaseSchema):
     id: int = Field(description="Student id")
     group: Optional[int] = Field(description="Group name")

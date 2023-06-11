@@ -1,16 +1,15 @@
-from .database import Base
+from ..database import Base
 from sqlalchemy import (
-    TIMESTAMP,
     Column,
     Date,
     String,
     Boolean,
     Integer,
-    text,
     ForeignKey,
     Table,
 )
 from sqlalchemy.orm import relationship
+from .structure import Group
 
 
 class UnivercityVisitor(Base):
@@ -20,13 +19,7 @@ class UnivercityVisitor(Base):
     middle_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     birthdate = Column(Date, nullable=False)
-    passport_id = Column(String, nullable=False)
-
-
-class Group(Base):
-    __tablename__ = "groups"
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    passport_id = Column(String, nullable=False, unique=True)
 
 
 teacher_course = Table(
@@ -46,21 +39,10 @@ class Teacher(Base):
     )
 
 
-class Course(Base):
-    __tablename__ = "courses"
-    id = Column(Integer, primary_key=True)
-    name = Column(
-        String,
-        nullable=False,
-    )
-    teachers = relationship(
-        "Teacher", secondary="teacher_course", back_populates="courses"
-    )
-
-
 class Student(Base):
     __tablename__ = "students"
     id = Column(Integer, primary_key=True)
     visitor_id = Column(Integer, ForeignKey("visitors.id"))
+    visitor = relationship("UnivercityVisitor")
     group_id = Column(Integer, ForeignKey("groups.id"))
-    group = relationship("Group", backref="students")
+    group = relationship(Group, backref="students")
