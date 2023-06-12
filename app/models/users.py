@@ -7,9 +7,11 @@ from sqlalchemy import (
     Integer,
     ForeignKey,
     Table,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from .structure import Group
+from .education import Course
 
 
 class UnivercityVisitor(Base):
@@ -27,6 +29,7 @@ teacher_course = Table(
     Base.metadata,
     Column("teacher_id", Integer, ForeignKey("teachers.id")),
     Column("course_id", Integer, ForeignKey("courses.id")),
+    UniqueConstraint("teacher_id", "course_id", name="uq_teacher_course"),
 )
 
 
@@ -34,8 +37,12 @@ class Teacher(Base):
     __tablename__ = "teachers"
     id = Column(Integer, primary_key=True)
     visitor_id = Column(Integer, ForeignKey("visitors.id"))
+    visitor = relationship(UnivercityVisitor)
     courses = relationship(
-        "Course", secondary="teacher_course", back_populates="teachers"
+        Course,
+        secondary="teacher_course",
+        back_populates="teachers",
+        cascade="all, delete",
     )
 
 
@@ -43,6 +50,6 @@ class Student(Base):
     __tablename__ = "students"
     id = Column(Integer, primary_key=True)
     visitor_id = Column(Integer, ForeignKey("visitors.id"))
-    visitor = relationship("UnivercityVisitor")
+    visitor = relationship(UnivercityVisitor)
     group_id = Column(Integer, ForeignKey("groups.id"))
     group = relationship(Group, backref="students")

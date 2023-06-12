@@ -1,7 +1,8 @@
-from datetime import datetime, date
-from pydantic import BaseModel, constr, validator, Field
-import re
+from datetime import date
+from pydantic import BaseModel, Field
 from typing import Optional, List
+from .education_schemas import CourseSchema
+from .core import optional
 
 
 class VisitorBaseSchema(BaseModel):
@@ -18,32 +19,32 @@ class CreateVisitorSchema(VisitorBaseSchema):
     pass
 
 
-class Visitor(VisitorBaseSchema):
+class GetVisitorSchema(VisitorBaseSchema):
     class Config:
         orm_mode = True
 
 
 class CreateStudentSchema(VisitorBaseSchema):
-    group_id: int = Field(description="Group id")
+    group_id: Optional[int] = Field(description="Group id")
 
 
-class UpdateStudentSchema(CreateStudentSchema):
-    pass
-
-
-class Student(VisitorBaseSchema):
+class GetStudentSchema(VisitorBaseSchema):
     id: int = Field(description="Student id")
     group: Optional[int] = Field(description="Group name")
 
+    class Config:
+        orm_mode = True
+
 
 class CreateTeacherSchema(VisitorBaseSchema):
-    courses: List[int] = Field(description="Teachers courses")
+    courses: Optional[List[int]] = Field(description="Teachers courses")
 
 
-class Course(BaseModel):
-    name: str = Field(description="Course name")
+@optional
+class UpdateTeacherSchema(VisitorBaseSchema):
+    courses: Optional[List[int]] = Field(description="Teachers courses")
 
 
-class Teacher(Visitor):
-    id: int = Field(description="Student id")
-    courses: Optional[List[Course]] = Field(description="Courses")
+class GetTeacherSchema(GetVisitorSchema):
+    id: int = Field(description="Teacher id")
+    courses: Optional[List[CourseSchema]] = Field(description="Courses")
