@@ -10,59 +10,42 @@ from ..schemas.users_schemas import (
     CreateTeacherSchema,
     GetStudentSchema,
     GetTeacherSchema,
+    UpdateStudentSchema,
     UpdateTeacherSchema,
-    UpdateTeacherSchema,
+    GetVisitorSchema,
 )
 
 router = APIRouter()
 
 
-@router.post(
-    "/students",
-    status_code=status.HTTP_201_CREATED,
-    response_model=GetStudentSchema,
-    description="Create student with specified data",
-)
+@router.post("/students", response_model=GetStudentSchema, status_code=201)
 def create_student(
     student_data: CreateStudentSchema, db: Session = Depends(get_db)
 ):
-    visitor = (
-        db.query(UnivercityVisitor)
-        .filter(
-            UnivercityVisitor.passport_id
-            == str(student_data.passport_id.lower())
-        )
+    if (
+        db.query(Student)
+        .filter_by(passport_id=student_data.passport_id)
         .first()
-    )
-    if visitor:
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="User with same passport id already exist",
+            detail="User with the same passport ID already exists",
         )
-    new_visitor = UnivercityVisitor(
-        name=student_data.name,
-        middle_name=student_data.middle_name,
-        last_name=student_data.last_name,
-        birthdate=student_data.birthdate,
-        passport_id=student_data.passport_id,
-    )
-    db.add(new_visitor)
-    db.flush()
-    new_student_group = db.query(Group).get(student_data.group_id)
-    if not new_student_group:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Group with id {student_data.group_id} not found!",
-        )
-    new_student = Student(
-        visitor_id=new_visitor.id, group_id=int(student_data.group_id)
-    )
+
+    if student_data.group_id is not None:
+        if db.query(Group).get(student_data.group_id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="specified group does not exists",
+            )
+
+    new_student = Student(**student_data.dict())
+
     db.add(new_student)
     db.commit()
-    db.refresh(new_student)
-
     response = GetStudentSchema.from_orm(new_student)
     db.close()
+
     return response
 
 
@@ -91,7 +74,7 @@ def get_student(student_id: int, db: Session = Depends(get_db)):
 )
 def patch_student(
     student_id: int,
-    student_data: UpdateTeacherSchema,
+    student_data: UpdateStudentSchema,
     db: Session = Depends(get_db),
 ):
     student: Student = db.query(Student).get(student_id)
@@ -99,27 +82,12 @@ def patch_student(
     if student is None:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    if "group" in student_data:
-        group = db.query(Group).get(student_data.group_id)
-        if group:
-            student.group = group
-
-    visitor: UnivercityVisitor = student.visitor
-
     for key, value in student_data:
-        if hasattr(visitor, key) and value:
-            setattr(visitor, key, value)
+        if hasattr(student, key) and value:
+            setattr(student, key, value)
 
-    response = GetStudentSchema(
-        id=student.id,
-        name=student.visitor.name,
-        middle_name=student.visitor.middle_name,
-        last_name=student.visitor.last_name,
-        passport_id=student.visitor.passport_id,
-        birthdate=student.visitor.birthdate,
-        group=student.group.name if student.group else None,
-    )
     db.commit()
+    response = GetStudentSchema.from_orm(student)
     db.close()
     return response
 
@@ -151,56 +119,36 @@ def delete_student(student_id: int, db: Session = Depends(get_db)):
 def create_teacher(
     teacher_data: CreateTeacherSchema, db: Session = Depends(get_db)
 ):
-    visitor = (
-        db.query(UnivercityVisitor)
-        .filter(
-            UnivercityVisitor.passport_id
-            == str(teacher_data.passport_id.lower())
-        )
+    if (
+        db.query(Teacher)
+        .filter_by(passport_id=teacher_data.passport_id)
         .first()
-    )
-    if visitor:
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="User with same passport id already exist",
-        )
-    new_visitor = UnivercityVisitor(
-        name=teacher_data.name,
-        middle_name=teacher_data.middle_name,
-        last_name=teacher_data.last_name,
-        birthdate=teacher_data.birthdate,
-        passport_id=teacher_data.passport_id,
-    )
-    db.add(new_visitor)
-    db.flush()
-
-    new_teacher = Teacher(visitor_id=new_visitor.id)
-    if teacher_data.courses:
-        new_teacher_courses = (
-            db.query(Course).filter(Course.id.in_(teacher_data.courses)).all()
+            detail="Teacher with same passport id already exist",
         )
 
-        if len(new_teacher_courses) != len(teacher_data.courses):
+    teacher_dict = teacher_data.dict()
+    courses_ids: list = teacher_dict.pop("courses")
+
+    if courses_ids is not None:
+        courses = db.query(Course).filter(Course.id.in_(courses_ids)).all()
+        if len(courses_ids) != len(courses):
             raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                "One or more course IDs are invalid.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="One of the given courses are not exists",
             )
 
-        new_teacher.courses = new_teacher_courses
+        teacher_dict["courses"] = courses
+
+    new_teacher = Teacher(**teacher_dict)
 
     db.add(new_teacher)
     db.commit()
     db.refresh(new_teacher)
 
-    response = GetTeacherSchema(
-        id=new_teacher.id,
-        name=new_visitor.name,
-        middle_name=new_visitor.middle_name,
-        last_name=new_visitor.last_name,
-        passport_id=new_visitor.passport_id,
-        birthdate=new_visitor.birthdate,
-        courses=new_teacher.courses,
-    )
+    response = GetTeacherSchema.from_orm(new_teacher)
     db.close()
     return response
 
@@ -217,15 +165,7 @@ def get_teacher(teacher_id: int, db: Session = Depends(get_db)):
     if teacher is None:
         raise HTTPException(status_code=404, detail="Teacher not found")
 
-    response = GetTeacherSchema(
-        id=teacher.id,
-        name=teacher.visitor.name,
-        middle_name=teacher.visitor.middle_name,
-        last_name=teacher.visitor.last_name,
-        passport_id=teacher.visitor.passport_id,
-        birthdate=teacher.visitor.birthdate,
-        courses=teacher.courses,
-    )
+    response = GetTeacherSchema.from_orm(teacher)
     db.close()
     return response
 
@@ -246,31 +186,23 @@ def patch_teacher(
     if teacher is None:
         raise HTTPException(status_code=404, detail="Teacher not found")
 
-    print(teacher_data)
+    teacher_data_dict = teacher_data.dict()
 
-    if teacher_data.courses is not None:
+    courses = teacher_data_dict.pop("courses")
+
+    if courses is not None:
         teacher.courses.clear()
         new_courses = (
             db.query(Course).filter(Course.id.in_(teacher_data.courses)).all()
         )
 
         teacher.courses = new_courses
-        print(teacher.courses)
 
-    visitor: UnivercityVisitor = teacher.visitor
+    for key, value in teacher_data_dict.items():
+        if hasattr(teacher, key) and value:
+            setattr(teacher, key, value)
 
-    for key, value in teacher_data:
-        if hasattr(visitor, key) and value:
-            setattr(visitor, key, value)
-
-    response = GetTeacherSchema(
-        id=teacher.id,
-        name=teacher.visitor.name,
-        middle_name=teacher.visitor.middle_name,
-        last_name=teacher.visitor.last_name,
-        passport_id=teacher.visitor.passport_id,
-        birthdate=teacher.visitor.birthdate,
-    )
     db.commit()
+    response = GetTeacherSchema.from_orm(teacher)
     db.close()
     return response

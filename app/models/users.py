@@ -33,11 +33,9 @@ teacher_course = Table(
 )
 
 
-class Teacher(Base):
+class Teacher(UnivercityVisitor):
     __tablename__ = "teachers"
-    id = Column(Integer, primary_key=True)
-    visitor_id = Column(Integer, ForeignKey("visitors.id"))
-    visitor = relationship(UnivercityVisitor)
+    id = Column(Integer, ForeignKey("visitors.id"), primary_key=True)
     courses = relationship(
         Course,
         secondary="teacher_course",
@@ -46,10 +44,8 @@ class Teacher(Base):
     )
 
 
-class Student(Base):
+class Student(UnivercityVisitor):
     __tablename__ = "students"
-    id = Column(Integer, primary_key=True)
-    visitor_id = Column(Integer, ForeignKey("visitors.id"))
-    visitor = relationship(UnivercityVisitor)
-    group_id = Column(Integer, ForeignKey("groups.id"))
+    id = Column(Integer, ForeignKey("visitors.id"), primary_key=True)
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
     group = relationship(Group, backref="students")

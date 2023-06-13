@@ -4,6 +4,8 @@ from typing import Optional, List
 from .education_schemas import CourseSchema
 from .core import optional
 
+from .structure_schemas import GroupSchema
+
 
 class VisitorBaseSchema(BaseModel):
     name: str = Field(description="Visitor name", max_length=16)
@@ -30,19 +32,24 @@ class CreateStudentSchema(VisitorBaseSchema):
 
 class GetStudentSchema(VisitorBaseSchema):
     id: int = Field(description="Student id")
-    group: Optional[int] = Field(description="Group name")
+    group: Optional[GroupSchema]
 
     class Config:
         orm_mode = True
 
 
 class CreateTeacherSchema(VisitorBaseSchema):
-    courses: Optional[List[int]] = Field(description="Teachers courses")
+    courses: Optional[List[int]] = Field(None, description="Teachers courses")
 
 
 @optional
-class UpdateTeacherSchema(VisitorBaseSchema):
-    courses: Optional[List[int]] = Field(description="Teachers courses")
+class UpdateStudentSchema(CreateStudentSchema):
+    pass
+
+
+@optional
+class UpdateTeacherSchema(CreateTeacherSchema):
+    pass
 
 
 class GetTeacherSchema(GetVisitorSchema):

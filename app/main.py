@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from app.config import settings
 from app.routers import users
 
+
 app = FastAPI()
 
 origins = [

@@ -17,7 +17,9 @@ def get_db():
     )
 
     engine = create_engine(SQLALCHEMY_DATABASE_URL)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    SessionLocal = sessionmaker(
+        autocommit=False, autoflush=False, bind=engine, expire_on_commit=True
+    )
     db = SessionLocal()
     try:
         yield db

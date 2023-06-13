@@ -1,8 +1,8 @@
-"""create group and course
+"""move to another ierarchy
 
-Revision ID: 19d6e16b11c2
-Revises: 69646bd4200b
-Create Date: 2023-06-09 23:56:35.392755
+Revision ID: b4160a12ded7
+Revises: e301e7842672
+Create Date: 2023-06-13 00:09:00.448169
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "19d6e16b11c2"
-down_revision = "69646bd4200b"
+revision = 'b4160a12ded7'
+down_revision = 'e301e7842672'
 branch_labels = None
 depends_on = None
 
