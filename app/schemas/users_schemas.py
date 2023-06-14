@@ -1,10 +1,10 @@
 from datetime import date
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from .education_schemas import CourseSchema
+from .education_schemas import GetCourseSchema
 from .core import optional
 
-from .structure_schemas import GroupSchema
+from .structure_schemas import GroupSchema, DepartmentSchema
 
 
 class VisitorBaseSchema(BaseModel):
@@ -40,18 +40,53 @@ class GetStudentSchema(VisitorBaseSchema):
 
 class CreateTeacherSchema(VisitorBaseSchema):
     courses: Optional[List[int]] = Field(None, description="Teachers courses")
+    department_id: int = Field(description="Teacher department id")
 
 
 @optional
-class UpdateStudentSchema(CreateStudentSchema):
+class PatchStudentSchema(CreateStudentSchema):
+    pass
+
+
+class PutStudentSchema(CreateStudentSchema):
     pass
 
 
 @optional
-class UpdateTeacherSchema(CreateTeacherSchema):
+class PatchTeacherSchema(CreateTeacherSchema):
+    pass
+
+
+class PutTeacherSchema(CreateTeacherSchema):
     pass
 
 
 class GetTeacherSchema(GetVisitorSchema):
     id: int = Field(description="Teacher id")
-    courses: Optional[List[CourseSchema]] = Field(description="Courses")
+    courses: Optional[List[GetCourseSchema]] = Field(description="Courses")
+    department: DepartmentSchema
+
+
+class CreateStudentCourseGradeSchema(BaseModel):
+    course_id: int
+    score: int
+    student_id: int
+
+    class Config:
+        orm_mode = True
+
+
+class PutStudentCourseGradeSchema(BaseModel):
+    score: int
+
+    class Config:
+        orm_mode = True
+
+
+class GetStudentCourseGradeSchema(BaseModel):
+    course: GetCourseSchema
+    student: GetStudentSchema
+    score: int
+
+    class Config:
+        orm_mode = True

@@ -1,8 +1,8 @@
-"""move to another ierarchy
+"""on start
 
-Revision ID: b4160a12ded7
-Revises: e301e7842672
-Create Date: 2023-06-13 00:09:00.448169
+Revision ID: 0bfb579e5d86
+Revises: 
+Create Date: 2023-06-14 16:44:06.373173
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'b4160a12ded7'
-down_revision = 'e301e7842672'
+revision = '0bfb579e5d86'
+down_revision = None
 branch_labels = None
 depends_on = None
 

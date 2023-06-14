@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, status, HTTPException
-
-from ..models.users import Student, Teacher, UnivercityVisitor
+from ..models.users import Student, Teacher
 from ..models.education import Course
-from ..models.structure import Group
+from ..models.structure import Group, Department, Faculty
 from ..database import get_db
 from sqlalchemy.orm import Session
 from ..schemas.users_schemas import (
@@ -10,15 +9,22 @@ from ..schemas.users_schemas import (
     CreateTeacherSchema,
     GetStudentSchema,
     GetTeacherSchema,
-    UpdateStudentSchema,
-    UpdateTeacherSchema,
-    GetVisitorSchema,
+    PatchStudentSchema,
+    PatchTeacherSchema,
+    PutTeacherSchema,
 )
+from typing import List
+from .core import get_object_or_404
 
 router = APIRouter()
 
 
-@router.post("/students", response_model=GetStudentSchema, status_code=201)
+@router.post(
+    "/students",
+    response_model=GetStudentSchema,
+    status_code=201,
+    description="Creates student from the given data",
+)
 def create_student(
     student_data: CreateStudentSchema, db: Session = Depends(get_db)
 ):
@@ -33,11 +39,7 @@ def create_student(
         )
 
     if student_data.group_id is not None:
-        if db.query(Group).get(student_data.group_id) is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="specified group does not exists",
-            )
+        get_object_or_404(db, Group, student_data.group_id)
 
     new_student = Student(**student_data.dict())
 
@@ -57,13 +59,26 @@ def create_student(
 )
 def get_student(student_id: int, db: Session = Depends(get_db)):
     student: Student = db.query(Student).get(student_id)
-
-    if student is None:
-        raise HTTPException(status_code=404, detail="Student not found")
-
+    student = get_object_or_404(db, Student, student_id)
     response = GetStudentSchema.from_orm(student)
     db.close()
     return response
+
+
+@router.get(
+    "/students",
+    status_code=status.HTTP_200_OK,
+    response_model=List[GetStudentSchema],
+    description="Get list of all students",
+)
+def get_students(db: Session = Depends(get_db)):
+    students = [
+        GetStudentSchema.from_orm(student)
+        for student in db.query(Student).all()
+    ]
+
+    db.close()
+    return students
 
 
 @router.patch(
@@ -74,13 +89,33 @@ def get_student(student_id: int, db: Session = Depends(get_db)):
 )
 def patch_student(
     student_id: int,
-    student_data: UpdateStudentSchema,
+    student_data: PatchStudentSchema,
     db: Session = Depends(get_db),
 ):
-    student: Student = db.query(Student).get(student_id)
+    student: Student = get_object_or_404(db, Student, student_id)
 
-    if student is None:
-        raise HTTPException(status_code=404, detail="Student not found")
+    for key, value in student_data:
+        if hasattr(student, key) and value:
+            setattr(student, key, value)
+
+    db.commit()
+    response = GetStudentSchema.from_orm(student)
+    db.close()
+    return response
+
+
+@router.put(
+    "/students/{student_id:int}",
+    status_code=status.HTTP_200_OK,
+    response_model=GetStudentSchema,
+    description="Replaces all student data with the given",
+)
+def patch_student(
+    student_id: int,
+    student_data: PatchStudentSchema,
+    db: Session = Depends(get_db),
+):
+    student: Student = get_object_or_404(db, Student, student_id)
 
     for key, value in student_data:
         if hasattr(student, key) and value:
@@ -98,12 +133,7 @@ def patch_student(
     description="Delete the specifed student",
 )
 def delete_student(student_id: int, db: Session = Depends(get_db)):
-    student: Student = (
-        db.query(Student).filter(Student.id == student_id).first()
-    )
-
-    if student is None:
-        raise HTTPException(status_code=404, detail="Student not found")
+    student: Student = get_object_or_404(db, Student, student_id)
 
     db.delete(student)
     db.commit()
@@ -133,11 +163,23 @@ def create_teacher(
     courses_ids: list = teacher_dict.pop("courses")
 
     if courses_ids is not None:
-        courses = db.query(Course).filter(Course.id.in_(courses_ids)).all()
+        teacher_faculty: Faculty = get_object_or_404(
+            db, Department, teacher_data.department_id
+        ).faculty
+        print(teacher_faculty.name)
+        courses = (
+            db.query(Course)
+            .filter(Course.id.in_(courses_ids))
+            .filter(Course.faculty == teacher_faculty)
+            .all()
+        )
         if len(courses_ids) != len(courses):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="One of the given courses are not exists",
+                detail=(
+                    "One of the given courses are not exists",
+                    " or not on the teacher department",
+                ),
             )
 
         teacher_dict["courses"] = courses
@@ -160,14 +202,26 @@ def create_teacher(
     description="Return data of specifed teacher",
 )
 def get_teacher(teacher_id: int, db: Session = Depends(get_db)):
-    teacher: Teacher = db.query(Teacher).get(teacher_id)
-
-    if teacher is None:
-        raise HTTPException(status_code=404, detail="Teacher not found")
-
+    teacher: Teacher = get_object_or_404(db, Teacher, teacher_id)
     response = GetTeacherSchema.from_orm(teacher)
     db.close()
     return response
+
+
+@router.get(
+    "/teachers",
+    status_code=status.HTTP_200_OK,
+    response_model=List[GetTeacherSchema],
+    description="Get list of all teachers",
+)
+def get_teachers(db: Session = Depends(get_db)):
+    teachers = [
+        GetTeacherSchema.from_orm(teacher)
+        for teacher in db.query(Teacher).all()
+    ]
+
+    db.close()
+    return teachers
 
 
 @router.patch(
@@ -178,25 +232,94 @@ def get_teacher(teacher_id: int, db: Session = Depends(get_db)):
 )
 def patch_teacher(
     teacher_id: int,
-    teacher_data: UpdateTeacherSchema,
+    teacher_data: PatchTeacherSchema,
     db: Session = Depends(get_db),
 ):
-    teacher: Teacher = db.query(Teacher).get(teacher_id)
+    teacher: Teacher = get_object_or_404(db, Teacher, teacher_id)
 
-    if teacher is None:
-        raise HTTPException(status_code=404, detail="Teacher not found")
+    new_teacher_faculty: Faculty = (
+        teacher.department.faculty
+        if teacher_data.department_id is None
+        else get_object_or_404(
+            db, Department, teacher_data.department_id
+        ).faculty
+    )
 
     teacher_data_dict = teacher_data.dict()
 
     courses = teacher_data_dict.pop("courses")
 
-    if courses is not None:
+    if (
+        new_teacher_faculty != teacher.department.faculty
+        or courses is not None
+    ):
         teacher.courses.clear()
+
+    if courses is not None:
         new_courses = (
-            db.query(Course).filter(Course.id.in_(teacher_data.courses)).all()
+            db.query(Course)
+            .filter(Course.id.in_(teacher_data.courses))
+            .filter(Course.faculty == new_teacher_faculty)
+            .all()
         )
+        if len(new_courses) != len(courses):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Given corses are not presented "
+                    "on the {new_teacher_faculty}"
+                ),
+            )
 
         teacher.courses = new_courses
+
+    for key, value in teacher_data_dict.items():
+        if hasattr(teacher, key) and value:
+            setattr(teacher, key, value)
+
+    db.commit()
+    response = GetTeacherSchema.from_orm(teacher)
+    db.close()
+    return response
+
+
+@router.put(
+    "/teachers/{teacher_id:int}",
+    status_code=status.HTTP_200_OK,
+    response_model=GetTeacherSchema,
+    description="Patch teacher with specified data",
+)
+def put_teacher(
+    teacher_id: int,
+    teacher_data: PutTeacherSchema,
+    db: Session = Depends(get_db),
+):
+    teacher: Teacher = get_object_or_404(db, Teacher, teacher_id)
+
+    new_teacher_faculty = get_object_or_404(
+        db, Department, teacher_data.department_id
+    ).faculty
+
+    teacher_data_dict = teacher_data.dict()
+    courses = teacher_data_dict.pop("courses")
+    teacher.courses.clear()
+
+    new_courses = (
+        db.query(Course)
+        .filter(Course.id.in_(teacher_data.courses))
+        .filter(Course.faculty == new_teacher_faculty)
+        .all()
+    )
+    if len(new_courses) != len(courses):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Given corses are not presented "
+                "on the {new_teacher_faculty}"
+            ),
+        )
+
+    teacher.courses = new_courses
 
     for key, value in teacher_data_dict.items():
         if hasattr(teacher, key) and value:
