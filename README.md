@@ -26,7 +26,7 @@
  - Учебный план - учебный план группы на семестр, включает разные курсы. Таблица 'education_plans'.
  
 
-ER-диаграмма, которая описывает все сущности и связи между сущностями доступна по этой [сслыке.](https://www.yworks.com/yed-live/?file=https://gist.githubusercontent.com/ead3471/27bc4d7c0fcf181c6bbd10445fe19718/raw/af8c85120656bee42192219966503dfc34a11abc/fastapi%20-%20public)
+ER-диаграмма, которая описывает все сущности и связи между сущностями доступна по этой [ссылке.](https://www.yworks.com/yed-live/?file=https://gist.githubusercontent.com/ead3471/27bc4d7c0fcf181c6bbd10445fe19718/raw/af8c85120656bee42192219966503dfc34a11abc/fastapi%20-%20public)
  
 SQL скрипт, который создаёт все таблицы с полями, их типами данных, ключами и связями доступен [здесь](https://github.com/ead3471/Univercity/blob/master/sql_tables_code_create.sql)
 
