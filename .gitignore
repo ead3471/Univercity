@@ -48,6 +48,6 @@ package.nls.*.json
 l10n/
 venv
 .DS_Store
-.env
+# .env
 __pycache__
 .vscode
