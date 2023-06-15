@@ -100,3 +100,7 @@ def put_grade(
 ):
     grade: CourseGrade = get_object_or_404(db, CourseGrade, grade_id)
     grade.score = grade_data.score
+    db.commit()
+    responce = GetStudentCourseGradeSchema.from_orm(grade)
+    db.close()
+    return responce
