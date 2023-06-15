@@ -4,7 +4,7 @@ services:
     image: postgres:13.0-alpine
     container_name: postgres_univercity
     ports:
-      - '5432:5432'
+      - '6500:5432'
     restart: always
     command: postgres -c listen_addresses='*'
     env_file:
