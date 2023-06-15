@@ -65,14 +65,17 @@ SQL скрипт, который создаёт все таблицы с пол�
     ```
 3. Выбрать всех преподавателей, которые преподают в здании №3.
    ```
-    select 
-        visitors.id as teacher_id,
-        visitors.name as teacher_name
-    from buildings 
-    join auditories on auditories.building_id = buildings.id 
-    join lessons ON lessons.auditory_id  = auditories.id 
-    join visitors on visitors.id = lessons.teacher_id 
-    where buildings.house_number = '3';
+    SELECT 
+        visitors.id AS teacher_id,
+        visitors.name AS teacher_name
+    FROM buildings 
+    JOIN auditories 
+        ON auditories.building_id = buildings.id 
+    JOIN lessons 
+        ON lessons.auditory_id  = auditories.id 
+    JOIN visitors 
+        ON visitors.id = lessons.teacher_id 
+    WHERE buildings.house_number = '3';
     ```
 
 4. Удалить задание для самостоятельной работы, которое было создано более года назад.
