@@ -124,6 +124,7 @@ SQL скрипт, который создаёт все таблицы с пол�
     docker compose exec api bash 
     alembic upgrade head
     alembic revision --autogenerate -m "start project"
+    alembic upgrade head
     ```
 
 
