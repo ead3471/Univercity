@@ -121,8 +121,8 @@ SQL скрипт, который создаёт все таблицы с пол�
 6. После запуска контейнера выполните актуализацию базы данных.
     ```
     docker compose exec api bash 
-    alembic revision --autogenerate -m "start project"
     alembic upgrade head
+    alembic revision --autogenerate -m "start project"
     ```
 
 
