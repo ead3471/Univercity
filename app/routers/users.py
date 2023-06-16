@@ -110,7 +110,7 @@ def patch_student(
     response_model=GetStudentSchema,
     description="Replaces all student data with the given",
 )
-def patch_student(
+def put_student(
     student_id: int,
     student_data: PatchStudentSchema,
     db: Session = Depends(get_db),
