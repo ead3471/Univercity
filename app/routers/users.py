@@ -13,7 +13,6 @@ from ..schemas.users_schemas import (
     PatchTeacherSchema,
     PutTeacherSchema,
 )
-from typing import List
 from .core import get_object_or_404
 
 router = APIRouter()
@@ -45,10 +44,7 @@ def create_student(
 
     db.add(new_student)
     db.commit()
-    response = GetStudentSchema.from_orm(new_student)
-    db.close()
-
-    return response
+    return new_student
 
 
 @router.get(
@@ -58,26 +54,18 @@ def create_student(
     description="Return data of specifed student",
 )
 def get_student(student_id: int, db: Session = Depends(get_db)):
-    student: Student = db.query(Student).get(student_id)
     student = get_object_or_404(db, Student, student_id)
-    response = GetStudentSchema.from_orm(student)
-    db.close()
-    return response
+    return student
 
 
 @router.get(
     "/students",
     status_code=status.HTTP_200_OK,
-    response_model=List[GetStudentSchema],
+    response_model=list[GetStudentSchema],
     description="Get list of all students",
 )
 def get_students(db: Session = Depends(get_db)):
-    students = [
-        GetStudentSchema.from_orm(student)
-        for student in db.query(Student).all()
-    ]
-
-    db.close()
+    students = db.query(Student).all()
     return students
 
 
@@ -97,11 +85,8 @@ def patch_student(
     for key, value in student_data:
         if hasattr(student, key) and value:
             setattr(student, key, value)
-
     db.commit()
-    response = GetStudentSchema.from_orm(student)
-    db.close()
-    return response
+    return student
 
 
 @router.put(
@@ -122,9 +107,7 @@ def put_student(
             setattr(student, key, value)
 
     db.commit()
-    response = GetStudentSchema.from_orm(student)
-    db.close()
-    return response
+    return student
 
 
 @router.delete(
@@ -188,11 +171,7 @@ def create_teacher(
 
     db.add(new_teacher)
     db.commit()
-    db.refresh(new_teacher)
-
-    response = GetTeacherSchema.from_orm(new_teacher)
-    db.close()
-    return response
+    return new_teacher
 
 
 @router.get(
@@ -203,24 +182,17 @@ def create_teacher(
 )
 def get_teacher(teacher_id: int, db: Session = Depends(get_db)):
     teacher: Teacher = get_object_or_404(db, Teacher, teacher_id)
-    response = GetTeacherSchema.from_orm(teacher)
-    db.close()
-    return response
+    return teacher
 
 
 @router.get(
     "/teachers",
     status_code=status.HTTP_200_OK,
-    response_model=List[GetTeacherSchema],
+    response_model=list[GetTeacherSchema],
     description="Get list of all teachers",
 )
 def get_teachers(db: Session = Depends(get_db)):
-    teachers = [
-        GetTeacherSchema.from_orm(teacher)
-        for teacher in db.query(Teacher).all()
-    ]
-
-    db.close()
+    teachers = db.query(Teacher).all()
     return teachers
 
 
@@ -278,9 +250,7 @@ def patch_teacher(
             setattr(teacher, key, value)
 
     db.commit()
-    response = GetTeacherSchema.from_orm(teacher)
-    db.close()
-    return response
+    return teacher
 
 
 @router.put(
@@ -326,6 +296,4 @@ def put_teacher(
             setattr(teacher, key, value)
 
     db.commit()
-    response = GetTeacherSchema.from_orm(teacher)
-    db.close()
-    return response
+    return teacher

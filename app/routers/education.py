@@ -35,10 +35,8 @@ def create_course(
     new_course = Course(**course_data.dict())
     db.add(new_course)
     db.commit()
-    response = GetCourseSchema.from_orm(new_course)
-    db.close()
 
-    return response
+    return new_course
 
 
 @router.get(
@@ -49,9 +47,7 @@ def create_course(
 )
 def get_course(course_id: int, db: Session = Depends(get_db)):
     course = get_object_or_404(db, Course, course_id)
-    response = GetCourseSchema.from_orm(course)
-    db.close()
-    return response
+    return course
 
 
 @router.get(
@@ -62,10 +58,7 @@ def get_course(course_id: int, db: Session = Depends(get_db)):
 )
 def get_course_students(course_id: int, db: Session = Depends(get_db)):
     course: Course = get_object_or_404(db, Course, course_id)
-    students = course.students
-    response = [GetStudentSchema.from_orm(student) for student in students]
-    db.close()
-    return response
+    return course.students
 
 
 @router.post(
@@ -82,10 +75,7 @@ def create_grade(
     new_grade = CourseGrade(**grade_data.dict())
     db.add(new_grade)
     db.commit()
-    response = GetStudentCourseGradeSchema.from_orm(new_grade)
-    db.close()
-
-    return response
+    return new_grade
 
 
 @router.put(
@@ -101,6 +91,4 @@ def put_grade(
     grade: CourseGrade = get_object_or_404(db, CourseGrade, grade_id)
     grade.score = grade_data.score
     db.commit()
-    responce = GetStudentCourseGradeSchema.from_orm(grade)
-    db.close()
-    return responce
+    return grade
